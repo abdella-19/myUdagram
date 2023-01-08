@@ -4,7 +4,6 @@ import {Router, Request, Response} from 'express';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
 (async () => {
-
   // Init the Express application
   const app = express();
 
@@ -30,16 +29,18 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
   /**************************************************************************** */
 
-  app.get('/filteredimage',async (req: Request, res: Response) => {
-    const { image_url} = req.query.image_url.toString();
+  app.get('/filteredimage', async (req: Request, res: Response) => {
+    const image_url = (req.query as { image_url: string}).image_url;
+
     if (!image_url) {
-      res.status(400).send('image url is required');
+      return res.status(400).send('image url is required');
     }
 
-    const filtered_image = await filterImageFromURL(image_url);
+    const filtered_image : string = await filterImageFromURL(image_url);
 
-    res.status(200).sendFile(filtered_image, () => {
-      deleteLocalFiles([filtered_image])
+    res.status(200).sendFile(filtered_image, async (error) => {
+      if (error) { res.status(400).send(error)}
+      return await deleteLocalFiles([filtered_image]);
     });
 
    })
